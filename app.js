@@ -3,12 +3,8 @@ const fs = require("fs/promises");
 (async () => {
   const commandFileHandler = await fs.open("./command.txt", "r");
 
-  const watcher = fs.watch("./command.txt");
-
-  for await (const event of watcher) {
-    if (event.eventType === "change") {
-      console.log("The file was changed.");
-
+  commandFileHandler.on("change", () => {
+    commandFileHandler.emit("change", async () => {
       const size = (await commandFileHandler.stat()).size;
       const buff = Buffer.alloc(size);
       const offset = 0;
@@ -21,7 +17,16 @@ const fs = require("fs/promises");
         length,
         position,
       );
+
       console.log(content);
+    });
+  });
+
+  const watcher = fs.watch("./command.txt");
+
+  for await (const event of watcher) {
+    if (event.eventType === "change") {
+      commandFileHandler.emit("change");
     }
   }
 })();
